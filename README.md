@@ -3,3 +3,7 @@
 # OCM-Social-Widget
 
 Free Custom Component built with Svelte for searching and connecting with users in OCM - WIP....
+
+# Check the blog for the latest updates
+
+https://bitmapbytes.com/free-oracle-content-management-social-widget/
