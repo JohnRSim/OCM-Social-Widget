@@ -21,7 +21,8 @@
 
 	//stores
 	import { user as sUser } from './stores/user.js';
-	import { following, following as sFollowing } from './stores/following.js';
+	import { following as sFollowing } from './stores/following.js';
+	import { followers as sFollowers } from './stores/followers.js';
 	import { people as sPeople } from './stores/people.js';
 import { validate_each_argument } from 'svelte/internal';
 
@@ -151,8 +152,11 @@ import { validate_each_argument } from 'svelte/internal';
 						//set sessionID
 						sessionID = ($sUser.useSessionRequests) ? sessionID : connection.apiRandomID;
 						sUser.updateConnectionInfo(connection.languageLocale, connection.apiVersion, sessionID);
-						
+						//sUser.updateOCEVal('id',connection.id);
+
 						flip = true;
+						userFollowing();
+						userFollowers();
 
 						//get Profile pic
 						const [promiseProfilePic, abortProfilePic] = OSN.getMyProfilePic($sUser.session.oce, $sUser.sessionID);
@@ -412,6 +416,36 @@ import { validate_each_argument } from 'svelte/internal';
 	function handleSubmit() {
 
 	} 
+
+	
+	/**
+	 * userFollowing
+	 * get all home docs.
+	 */
+	 function userFollowing() {
+		console.log('[userFollowing]',$sUser.profile.oce);
+
+			const [promise, abort] = social.getFollowingUsers($sUser.profile.oce.id, $sUser.session.oce);
+		
+			promise.then((res) => {
+				console.log('userFollowing',res);
+				sFollowing.addFollowing(res.items);
+			});
+	}
+	/**
+	 * userFollowers
+	 * get all home docs.
+	 */
+	function userFollowers() {
+		console.log('[userFollowers]');
+
+			const [promise, abort] = social.getFollowers($sUser.profile.oce.id, $sUser.session.oce);
+		
+			promise.then((res) => {
+				console.log('userFollowers',res);
+				sFollowers.addFollowers(res.items);
+			});
+	}
 </script>
 
 <!-- Wrapper -->
