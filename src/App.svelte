@@ -1,254 +1,730 @@
 <script>
+	//svelte
+	import { onMount } from 'svelte';
+
+	//assets
 	import icoSearch from './assets/ico_search.svg';
 	import icoArrow from './assets/ico_arrow.svg';
-
+	import icoEyeoff from './assets/ico_eyeoff.svg';
+	import icoGlobe from './assets/ico_globe.svg';
+	import icoLock from './assets/ico_lock.svg';
+	import icoUser from './assets/ico_user.svg';
+	import logo from './assets/logo_social.png';
+	
+	//api
+	import AzureAuth from './lib/api/auth2.js';
+	import OCESocial from './lib/api/oce_social.js';
+	import OCERemoteJSON from './lib/api/oce_remoteJSON.js';
+	
 	//components
 	import HeaderTabList from './lib/components/HeaderTabList.svelte';
 
-	let searchActive = false;
+	//stores
+	import { user as sUser } from './stores/user.js';
+	import { following, following as sFollowing } from './stores/following.js';
+	import { people as sPeople } from './stores/people.js';
+import { validate_each_argument } from 'svelte/internal';
+
+	const social = new OCESocial();
+	const OSN = new OCERemoteJSON();
+	const Auth = new AzureAuth();
+
+	//globals
+	let searchFieldActive = false;
+	let ocmFieldActive = false;
+	let userFieldActive = false;
+	let passFieldActive = false;
+	let flip = false;
+	let searchField;
+	let activeTab = 'Following';
+
+	let requestedProfileImgs = [];
+	let updatingFollow = [];
+	$: isUpdatingFollow = [];
+	let userProfilePhotos = {};
+	$: userProfilePhotos = $sPeople.profilePhoto;
+
+	//auth
+	let username = '';
+	let password = '';
+
+	onMount(() => {
+		/*
+		const [promise, abort] = social.getPeople(null, $sUser.session.oce);
+
+		promise.then((res) => {
+			console.log('[People]',res);
+			//sUser.profileImg = red
+			//items = res.items;
+
+			if ((res) && (res.items)) {
+
+				const profileImages = [];
+				res.items.forEach((v, i) => {
+					sPeople.updateProfileInfo(v);
+					profileImages.push(v.id);
+				});
+				
+				if ($sPeople.searchEnabled) {
+					//items = $sPeople.availableProfiles;
+				}
+				//get Profile pic
+				const [promise, abort] = OSN.getProfilePictureDataUri(profileImages, $sUser.session.oce, $sUser.sessionID);
+
+				promise.then((profilePics) => {
+					console.log('[getProfilePictureDataUri]',profilePics);
+					profileImages.forEach((v, i) => {
+						sPeople.updateProfileImg(profileImages[i], profilePics[i].returnValue);
+					});
+
+					//loadingCommentProfileImgs = true;
+				});
+
+				//peopleLoaded = true;
+				
+				//hasContent = true;
+			}
+		});*/
+	});
+
+
+	/**
+	 * login
+	 **/
+	 function login() {
+		//errorCls = '';
+		//if (authenticating) {
+		//	return;
+		//}
+		//authenticating = true;
+
+		//FIGHTING WITH ORACLE SUPPORT [SR 3-22544107901 ]
+		//SHOULD ONLY NEED 1 bearer token and not 2...
+		//get IDCS session token first
+		//const [promiseIDCS, abortIDCS] = Auth.login(username, password, 'urn:opc:idm:__myscopes__');
+		//
+		//promiseIDCS.then((idcs) => {
+		//	console.log('[IDCS][Auth][Logged In][Token]',idcs);
+		//
+		//	//make sure access token is returned else error
+		//	if (typeof(idcs.access_token) === 'undefined') {
+		//		loginError();
+		//		return;
+		//	}
+		//	//const seconds = new Date().getTime() / 1000;
+        //    //const token = {'idcs-auth-token': `${idcs.access_token}|${seconds + 3500}`};
+		//	
+			//update session store
+		//	sUser.updateSession(idcs.access_token,'idcs');
+
+		
+			//get OCE session token
+			const [promise, abort] = Auth.login(username, password, 'https://1ABA33B6ED08480492BB2FB081CF85B2.cec.ocp.oraclecloud.com:443/urn:opc:cec:all');
+
+			promise.then((oce) => {
+				console.log('[OCE][Auth][Logged In][Token]',oce);
+
+				if (typeof(oce.error) !== 'undefined') {
+					console.error('IDCS OCE Auth Error: ', oce.error);
+					//loginError();
+				}
+
+				//update session store
+				sUser.updateSession(oce.access_token,'oce');
+
+				//get user profile info store in store
+				//const [promise, abort] = Auth.loadUserProfile('Me', $sUser.session.idcs);
+
+				//promise.then((idcsProfile) => {
+				//	console.log('[IDCS][Profile]',idcsProfile);
+				//	sUser.updateProfileInfo(idcsProfile, 'idcs');
+
+					//set sessionID if null set to active login to reuse throughout journey
+					let sessionID = ($sUser.sessionID)? $sUser.sessionID: Date.now();
+					//get conversation connection info
+					const [promise, abort] = social.getConnectionInfo($sUser.session.oce, $sUser.useSessionRequests, sessionID);
+
+					promise.then((connection) => {
+						console.log('[connection]',connection);
+						
+							
+						//set sessionID
+						sessionID = ($sUser.useSessionRequests) ? sessionID : connection.apiRandomID;
+						sUser.updateConnectionInfo(connection.languageLocale, connection.apiVersion, sessionID);
+						
+						flip = true;
+
+						//get Profile pic
+						const [promiseProfilePic, abortProfilePic] = OSN.getMyProfilePic($sUser.session.oce, $sUser.sessionID);
+
+						promiseProfilePic.then((profilePics) => {
+							console.log('[getMyProfilePic]',profilePics);
+							sPeople.updateProfileImg($sUser.profile.oce.id, profilePics[0].returnValue);
+						});
+
+						//get OCE profile info
+						const [promise, abort] = social.getProfile(connection.user.id, $sUser.session.oce);
+
+						promise.then((oceProfile) => {
+							console.log('[OCE][Profile]',oceProfile);
+
+							//create empty slot if user does not exist
+							sPeople.createBlankProfile(oceProfile.id);
+							//update profile info
+							sUser.updateProfileInfo(oceProfile, 'oce');
+
+							//get Profile pic
+							const [promiseProfilePic, abortProfilePic] = OSN.getProfilePictureDataUri([$sUser.profile.oce.id], $sUser.session.oce, $sUser.sessionID);
+
+							promiseProfilePic.then((profilePics) => {
+								console.log('[getProfilePictureDataUri]',profilePics);
+								if (profilePics[0].returnStatus === 'exception') {
+									return;
+								}
+								sPeople.updateProfileImg($sUser.profile.oce.id, profilePics[0].returnValue);
+							});
+
+							//create connection for video support.
+							//const peer = new Peer(oceProfile.id); 
+							
+
+							/*
+							//fetch profile image store as blob:url
+							const [promise, abort] = profile.fetchProfileImg(oceProfile.profilePictureURL, $sUser.session.oce);
+							//const [promise, abort] = profile.fetchProfileImg(`https://oce-fishbowl.cec.ocp.oraclecloud.com/pxysvc/proxy/oce/osn/social/api/v1/pictures/${res.id}/profile`);
+
+							promise.then((profileUrl) => {
+								console.log('[ProfilePic]',profileUrl);
+								sPeople.updateProfileImg(oceProfile.id, profileUrl);
+							});
+							*/
+
+							//items that can be precached with session info
+							//preCacheAllWithSession();
+
+							//goto dashboard
+							//goto('dashboard/feed/Home');
+						});
+						
+						//get User Stats 
+						const [promiseStats, abortStats] = social.getUserStats(connection.user.id, $sUser.session.oce);
+
+						promiseStats.then((res) => {
+							console.log('[getUserStats]',res);
+							const stats = {
+								followers: 0,
+								following: 0,
+								newConversations: 0,
+							};
+							res.items.forEach((v, i) => {
+								if (v.name === 'FOLLOWERS_COUNT') {
+									stats.followers = v.count;
+								}
+								if (v.name === 'FOLLOWING_COUNT') {
+									stats.following = v.count;
+								}
+								if (v.name === 'NEW_CONVERSATIONS_COUNT') {
+									stats.newConversations = v.count;
+								}
+								
+							});
+							//update stats
+							sUser.updateStats(stats);
+						});
+
+						//get all custom user properties
+						const [promiseProps, abortProps] = social.getAllUserProperties(connection.user.id, $sUser.session.oce);
+
+						promiseProps.then((allUserProps) => {
+							console.log('[OCE][Profile][getAllUserProperties]',allUserProps);
+							
+							//check if user has custom props
+							/*
+							if (allUserProps.items.some(prop => prop.name === 'A_User_TargetAudience')) {
+								//update props
+								sUser.updateProps(allUserProps);
+							//create custom props
+							} else {
+								const userProps = [{
+									name: 'A_App_Theme',
+									value: 'light'
+								},{
+									name: 'A_App_FontSize',
+									value: '1'
+								},{
+									name: 'A_App_Zoom',
+									value: '2'
+								},{
+									name: 'A_App_Language',
+									value: 'en'
+								},{
+									name: 'A_User_ContentLanguage',
+									value: 'en'
+								},{
+									name: 'A_User_TargetAudience',
+									value: 'TA_global'
+								}];
+
+								userProps.forEach((prop, i) => {
+									sUser.updateProps(prop);
+									createUserProperty(prop,connection.user.id);
+								});
+							}
+								*/
+						});
+					});
+				//});
+			}).catch((err) => {
+				console.error('IDCS OCE Auth Error: ', err);
+				//loginError();
+			});
+
+
+		//}).catch((err) => {
+		//	console.error('IDCS Auth Error: ', err);
+		//	loginError();
+		//});
+	}
+
+	/**
+	 * followUser
+	 **/
+	 function followUser(userID) {
+		console.log('[followUser]',userID,updatingFollow);
+
+		if (updatingFollow.indexOf(userID) >= 0) {
+			return;
+		}
+		//show loading display
+		updatingFollow.push(userID);
+		isUpdatingFollow = updatingFollow;
+
+
+		const [promise, abort] = social.addToFollowers(userID, $sUser.session.oce, $sUser.sessionID);
+		
+		promise.then((follow) => {
+			console.log('[followUser]', follow);
+
+			//Add user to active user list
+			sFollowing.addFollowingUser($sPeople.profile[userID]);	
+			updatingFollow.splice(updatingFollow.indexOf(userID),1);
+			isUpdatingFollow = updatingFollow;
+
+			//get User Stats 
+			const [promiseStats, abortStats] = social.getUserStats($sUser.profile.oce.id, $sUser.session.oce);
+
+			promiseStats.then((res) => {
+				console.log('[getUserStats]',res);
+				const stats = {
+					followers: 0,
+					following: 0,
+					newConversations: 0,
+				};
+				res.items.forEach((v, i) => {
+					if (v.name === 'FOLLOWERS_COUNT') {
+						stats.followers = v.count;
+					}
+					if (v.name === 'FOLLOWING_COUNT') {
+						stats.following = v.count;
+					}
+					if (v.name === 'NEW_CONVERSATIONS_COUNT') {
+						stats.newConversations = v.count;
+					}
+					
+				});
+				//update stats
+				sUser.updateStats(stats);
+
+			});
+		});
+	}
+
+	/**
+	 * unfollowUser
+	 **/
+	function unfollowUser(userID) {
+		console.log('[unfollowUser]',userID,updatingFollow);
+
+		if (updatingFollow.indexOf(userID) >= 0) {
+			return;
+		}
+		//show loading display
+		updatingFollow.push(userID);
+		isUpdatingFollow = updatingFollow;
+		
+		
+		const [promise, abort] = social.removeFollower(userID, $sUser.session.oce, $sUser.sessionID);
+		
+		promise.then((follow) => {
+			console.log('[unfollowUser]', follow);
+			
+			//remove user from active user list
+			sFollowing.removeFollowingUser(userID);
+			updatingFollow.splice(updatingFollow.indexOf(userID),1);
+			isUpdatingFollow = updatingFollow;
+
+			//get User Stats 
+			let activeUserID = 16001;
+			const [promiseStats, abortStats] = social.getUserStats(activeUserID, $sUser.session.oce);
+
+			promiseStats.then((res) => {
+				console.log('[getUserStats]',res);
+				const stats = {
+					followers: 0,
+					following: 0,
+					newConversations: 0,
+				};
+				res.items.forEach((v, i) => {
+					if (v.name === 'FOLLOWERS_COUNT') {
+						stats.followers = v.count;
+					}
+					if (v.name === 'FOLLOWING_COUNT') {
+						stats.following = v.count;
+					}
+					if (v.name === 'NEW_CONVERSATIONS_COUNT') {
+						stats.newConversations = v.count;
+					}
+					
+				});
+				//update stats
+				sUser.updateStats(stats);
+			});
+		});
+	}
+	/**
+	 * getProfileImg
+	 **/
+	function retrieveProfileImg(userName) {
+		console.log('retrieveProfileImg',userName)
+		if (userProfilePhotos[userName]) {
+			return userProfilePhotos[userName].img;
+		} else {
+			//no need to call multiple times
+			if (requestedProfileImgs.indexOf(userName) === -1) {
+				requestedProfileImgs.push(userName);
+				//getProfileImage(accessToken,userName).then((imgUrl) => {
+				//	sPeople.updateProfileImg(userName,imgUrl);
+					
+				//});
+			}
+		}
+	}
+	function handleSubmit() {
+
+	} 
 </script>
 
 <!-- Wrapper -->
 <section>
-	<!-- Component -->
-	<article>
-		<!-- Header -->
-		<header>
-			<fieldset>
-				<!-- Label -->
-				<legend><label for="socialUserSearch">Search:</label></legend>
-				<!-- xLabel -->
+	<div class="widgetWrapper" class:flip="{flip}">
+		<div class="widgetFlipper">
+			<!-- Login -->
+			<article class="loginWidget">
+				<header>
+					<img width="300" src="{logo}" alt="BitmapBytes - OCM Social Widget" />
+				</header>
+				<form on:submit|preventDefault={handleSubmit}>
+					<!-- OCM URL Field -->
+					<div class="field" class:active="{ocmFieldActive}" style="background-image:url({icoGlobe})">
+						<input 
+							autocapitalize="none" 
+							enterkeyhint="next"
+							id="ocmInstanceURL" 
+							type="search" 
+							placeholder="OCM Instance URL"
+							on:focus="{() => {ocmFieldActive = true;}}"
+							on:blur="{() => {ocmFieldActive = false;}}"/>
+					</div>
+					<!-- xOCM URL Field -->
 
-				<!-- Search Field -->
-				<div class="userSearchField" class:active="{searchActive}" style="background-image:url({icoSearch})">
-					<input 
-						id="socialUserSearch" 
-						type="search" 
-						placeholder="Search Network Users..." 
-						on:focus="{() => {searchActive = true;}}"
-						on:blur="{() => {searchActive = false;}}"/>
-					<button style="background-image:url({icoArrow})"></button>
-				</div>
-				<!-- xSearch Field -->
-			</fieldset>
-		</header>
-		<!-- xHeader -->
+					<div class="hr"><hr /></div>
 
-		<!-- Tabs-->
-		<nav>
-			<HeaderTabList
-				on:tab="{(e) => {
-					//goto(e.detail.path, { replaceState: true, noscroll: true });
-				}}"
-				hasTabs="{[
-					{
-						name: 'Following',
-						path: `/?tab=Tokens`,
-					},
-					{
-						name: 'Followers',
-						path: `/?tab=NFTs`,
-					},
-				]}"
-				activeTab="Following" />
-		</nav>
-		<!-- Tabs-->
+					<!-- OCM username -->
+					<div class="field" class:active="{userFieldActive}" style="margin-bottom:10px; background-image:url({icoUser})">
+						<input 
+							autocorrect="off" 
+							autocapitalize="none" 
+							autocomplete="username"
+							enterkeyhint="next"
+							id="username" 
+							type="search" 
+							placeholder="Username"
+							bind:value="{username}"
+							on:focus="{() => {userFieldActive = true;}}"
+							on:blur="{() => {userFieldActive = false;}}"/>
+					</div>
+					<!-- xOCM OCM username -->
 
-		<!-- Content -->
-		<main>
-			<ul>
-				<!-- User List -->
-				<li>
-					<dl>
-						<!-- Img Profile Info -->
-						<dt>
-							<figure>
-								<img src="pic_trulli.jpg" alt="Trulli">
-								<figcaption>Alfie McClagon</figcaption>
-							</figure>
-						</dt>
-						<!-- xImg Profile Info -->
-						
-						<!-- Profile Data -->
-						<dd>
-							<b>User 1</b>
-							<p>
-								Lorem ipsum and content....
-							</p>
-						</dd>
-						<!-- xProfile Data -->
-					</dl>
-				</li>
-				<!-- xUser List -->
+					<!-- OCM pasword -->
+					<div class="field" class:active="{passFieldActive}" style="margin-bottom:10px; background-image:url({icoLock})">
+						<input 
+							autocapitalize="none" 
+							enterkeyhint="next"
+							id="password" 
+							type="password" 
+							placeholder="Password"
+							bind:value="{password}"
+							on:focus="{() => {passFieldActive = true;}}"
+							on:blur="{() => {passFieldActive = false;}}"/>
+					</div>
+					<!-- xOCM pasword -->
 
+					<div class="loginAction">
+						<button on:click="{login}">Login</button>
+					</div>
+				</form>
+			</article>
+			<!-- xLogin -->
 
+			<!-- Component -->
+			<article class="socialWidget">
+				<!-- Header -->
+				<header>
+					<fieldset>
+						<!-- Label -->
+						<legend><label for="socialUserSearch">Search:</label></legend>
+						<!-- xLabel -->
 
+						<!-- Search Field -->
+						<div class="userSearchField" class:active="{searchFieldActive}" style="background-image:url({icoSearch})">
+							<input 
+								autocapitalize="none" 
+								enterkeyhint="next"
+								id="socialUserSearch" 
+								type="search" 
+								placeholder="Search Network Users..." 
+								bind:value="{searchField}"
+								on:focus="{() => {searchFieldActive = true;}}"
+								on:blur="{() => {searchFieldActive = false;}}"/>
+							<button style="background-image:url({icoArrow})" on:click="{() => { activeTab = 'Search'; }}"></button>
+						</div>
+						<!-- xSearch Field -->
+					</fieldset>
+				</header>
+				<!-- xHeader -->
 
+				<!-- Tabs -->
+				{#if ((activeTab !== 'Search') && (!searchField))}
+					<nav>
+						<HeaderTabList
+							on:tab="{(e) => {
+								activeTab = e.detail.name;
+								//goto(e.detail.path, { replaceState: true, noscroll: true });
+							}}"
+							hasTabs="{[
+								{
+									name: 'Following',
+									path: `/?tab=Tokens`,
+								},
+								{
+									name: 'Followers',
+									path: `/?tab=NFTs`,
+								},
+							]}"
+							activeTab="{activeTab}" />
+					</nav>
+				{/if}
+				<!-- Tabs-->
 
+				<!-- Content -->
+				{#if (activeTab === 'Following')}
+					<main>
+						{#if ($sUser.stats.following === 0)}
+						<div class="info">
+							You have no connections
+						</div>
+						{:else}
+						<ul>
+							<!-- User List -->
+							<li>
+								<dl>
+									<!-- Img Profile Info -->
+									<dt>
+										<figure>
+											<img src="data:image/gif;base64,R0lGODlhAQABAIAAAAUEBAAAACwAAAAAAQABAAACAkQBADs=" alt="">
+											<figcaption>Alfie McClagon</figcaption>
+										</figure>
+									</dt>
+									<!-- xImg Profile Info -->
+									
+									<!-- Profile Data -->
+									<dd>
+										<b>User 1</b>
+										<p>
+											Lorem ipsum and content....
+										</p>
+									</dd>
+									<!-- xProfile Data -->
+								</dl>
+							</li>
+							<!-- xUser List -->
+						</ul>
+						{/if}
+					</main>
+				{:else if (activeTab === 'Followers')}
+					<main>
+						{#if ($sUser.stats.followers === 0)}
+						<div class="info">
+							You have no followers
+						</div>
+						{:else}
+							users following
+						{/if}
+					</main>
+				<!-- Search -->
+				{:else}
+					<main>
+						<div class="info">
+							Searching network
+						</div>
+					</main>
+				{/if}
+				<!-- xContent -->
 
-
-				<!--TMP-->
-				
-				<!-- User List -->
-				<li>
-					<dl>
-						<!-- Img Profile Info -->
-						<dt>
-							<figure>
-								<img src="pic_trulli.jpg" alt="Trulli">
-								<figcaption>Alfie McClagon</figcaption>
-							</figure>
-						</dt>
-						<!-- xImg Profile Info -->
-						
-						<!-- Profile Data -->
-						<dd>
-							<b>User 1</b>
-							<p>
-								Lorem ipsum and content....
-							</p>
-						</dd>
-						<!-- xProfile Data -->
-					</dl>
-				</li>
-				<!-- xUser List -->
-				<!-- User List -->
-				<li>
-					<dl>
-						<!-- Img Profile Info -->
-						<dt>
-							<figure>
-								<img src="pic_trulli.jpg" alt="Trulli">
-								<figcaption>Alfie McClagon</figcaption>
-							</figure>
-						</dt>
-						<!-- xImg Profile Info -->
-						
-						<!-- Profile Data -->
-						<dd>
-							<b>User 1</b>
-							<p>
-								Lorem ipsum and content....
-							</p>
-						</dd>
-						<!-- xProfile Data -->
-					</dl>
-				</li>
-				<!-- xUser List -->
-				<!-- User List -->
-				<li>
-					<dl>
-						<!-- Img Profile Info -->
-						<dt>
-							<figure>
-								<img src="pic_trulli.jpg" alt="Trulli">
-								<figcaption>Alfie McClagon</figcaption>
-							</figure>
-						</dt>
-						<!-- xImg Profile Info -->
-						
-						<!-- Profile Data -->
-						<dd>
-							<b>User 1</b>
-							<p>
-								Lorem ipsum and content....
-							</p>
-						</dd>
-						<!-- xProfile Data -->
-					</dl>
-				</li>
-				<!-- xUser List -->
-				<!-- User List -->
-				<li>
-					<dl>
-						<!-- Img Profile Info -->
-						<dt>
-							<figure>
-								<img src="pic_trulli.jpg" alt="Trulli">
-								<figcaption>Alfie McClagon</figcaption>
-							</figure>
-						</dt>
-						<!-- xImg Profile Info -->
-						
-						<!-- Profile Data -->
-						<dd>
-							<b>User 1</b>
-							<p>
-								Lorem ipsum and content....
-							</p>
-						</dd>
-						<!-- xProfile Data -->
-					</dl>
-				</li>
-				<!-- xUser List -->
-				<!-- User List -->
-				<li>
-					<dl>
-						<!-- Img Profile Info -->
-						<dt>
-							<figure>
-								<img src="pic_trulli.jpg" alt="Trulli">
-								<figcaption>Alfie McClagon</figcaption>
-							</figure>
-						</dt>
-						<!-- xImg Profile Info -->
-						
-						<!-- Profile Data -->
-						<dd>
-							<b>User 1</b>
-							<p>
-								Lorem ipsum and content....
-							</p>
-						</dd>
-						<!-- xProfile Data -->
-					</dl>
-				</li>
-				<!-- xUser List -->
-				<!-- User List -->
-				<li>
-					<dl>
-						<!-- Img Profile Info -->
-						<dt>
-							<figure>
-								<img src="pic_trulli.jpg" alt="Trulli">
-								<figcaption>Alfie McClagon</figcaption>
-							</figure>
-						</dt>
-						<!-- xImg Profile Info -->
-						
-						<!-- Profile Data -->
-						<dd>
-							<b>User 1</b>
-							<p>
-								Lorem ipsum and content....
-							</p>
-						</dd>
-						<!-- xProfile Data -->
-					</dl>
-				</li>
-				<!-- xUser List -->
-				<!--TMP-->
-			</ul>
-		</main>
-		<!-- xContent -->
-	</article>
-	<!-- xComponent -->
+			</article>
+			<!-- xComponent -->
+		</div>
+	</div>
+	<footer class:hidden="{!flip}" class:show="{flip}">
+		<button class="logout" on:click="{() => { flip = false;}}">Logout</button>
+	</footer>
 </section>
 <!-- xWrapper -->
 
 <style>
+	footer {
+		display: flex;
+		justify-content: right;
+		opacity:0;
+	}
+	footer.hidden {
+		visibility: hidden;
+	}
+	footer.show {
+		visibility:visible;
+		animation-name: show;
+		animation-duration: 0.3s;
+		animation-delay: 0.4s;
+		animation-fill-mode: forwards;
+	}
+	@keyframes show {
+	0% {
+		opacity: 0;
+	}
+	100% {
+		opacity: 1;
+	}
+	}
+	.logout {
+		margin:20px;
+		border:0px;
+		cursor:pointer;
+		border-radius: 100px;
+		padding:6px 16px;
+		font-weight:600;
+		font-size:0.875em;
+		transition: color 0.3s, background 0.3s;
+		color:#BAC2CA;
+	}
+	
+	.logout:hover {
+		background:#F3F4F6;
+		color:#403b52;
+	}
+
+	.widgetWrapper {
+		background-color: transparent;
+		width: 440px;
+		height:588px;
+		perspective: 1000px;
+	}
+	
+	.widgetWrapper.flip .widgetFlipper {
+		transform: rotateY(180deg);
+	}
+
+	.loginWidget, .socialWidget {
+		position: absolute;
+		width: 100%;
+		height: 100%;
+		-webkit-backface-visibility: hidden;
+		backface-visibility: hidden;
+	}
+	.socialWidget {
+  		transform: rotateY(180deg);
+	}
 	article {
 		border-radius:26px 26px 20px 20px;
 		box-shadow:0px 2px 4px  0px rgba(0,0,0,0.15);
 		min-width:400px;
 		min-height:100px;
 		overflow: hidden;
+		height:558px;
+		position: relative;
 	}
-
+	.widgetFlipper {
+		position: relative;
+		width: 100%;
+		height: 100%;
+		text-align: center;
+		transition: transform 0.6s;
+		transform-style: preserve-3d;
+	}
+	.info {
+		border:solid 4px #F9FAFC;
+		border-radius: 20px;
+		padding:10px;
+		margin:10px 20px;
+		font-weight:bold;
+		text-align: center;
+		color:rgb(15 23 42);
+	}
 	legend {
 		display: none;
 	}
 
+	.loginWidget {
+	}
+
+	.loginWidget header {
+		text-align: center;
+		margin:20px;
+	}
+	.loginWidget form {
+		margin:20px;
+	}
+
+
+	.loginWidget .hr {
+		height:6px;
+		background:#F9FAFC;
+		border-radius: 20px;
+		margin:10px 0px;
+	}
+	.loginWidget .hr hr {
+		display: none;
+	}
+
+	.loginAction {
+		display: flex;
+		justify-content: center;
+	}
+	.loginWidget button {
+		border:0px;
+		border-radius: 100px;
+		background:#3F83D3;
+		color:#fff;
+		text-align: center;
+		min-height: 48px;
+		padding:0px 20px;
+		font-weight:bold;
+		letter-spacing: 1px;
+		width:200px;
+		cursor: pointer;
+		transition: background 0.3s;
+		font-size: 1.1em;;
+	}
+	.field,
 	.userSearchField {
 		display: flex;
 		background:#F9FAFC;
@@ -260,12 +736,18 @@
 		background-position:  10px center;
 		transition: box-shadow 0.3s, background 0.3s;
 	}
+	.field {
+		padding-right:10px
+	}
 	
+	.field:hover,
+	.field.active,
 	.userSearchField:hover,
 	.userSearchField.active {
 		background-color:#fff;
 		box-shadow:inset 0px 0px 2px 0px rgba(0,0,0,0.4),0px 1px 2px 0px rgba(0,0,0,0.1);
 	}
+	.field ::placeholder,
 	.userSearchField ::placeholder { /* Chrome, Firefox, Opera, Safari 10.1+ */
 		color: #687889;
 		font-weight: 600;
@@ -279,8 +761,10 @@
 		flex:1;
 		font-size:1.05em
 	}
-
-	button {
+	input:-webkit-autofill { 
+		-webkit-background-clip: text;
+	}
+	.userSearchField button {
 		width:48px;
 		height:48px;
 		border-radius: 50%;
@@ -320,8 +804,19 @@
 		list-style: none;
 		border-bottom:solid 4px #F9FAFC;
 	}
+	main li:last-child {
+		border:0px;
+	}
 	dl {
 		display: flex;
+		border-radius: 30px;
+		background:#fff;
+		transition: background 0.3s;
+		padding:10px 0px
+	}
+	dl:hover {
+		background:#f9fafc;
+		cursor:pointer;
 	}
 	dd {
 		flex:1;
