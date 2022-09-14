@@ -16,6 +16,15 @@ const setup = {
     session: {
         oce: '',
     },
+	profile: {
+		oce: {
+			id:''
+		}
+	},
+	stats: {
+		following:0,
+		followers:0,
+	}
 };
 
 /**

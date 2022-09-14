@@ -17,9 +17,9 @@ const setup = {
  */
 function manageFollowers() {
     let store = setup;
-    if (process.browser) {
+    //if (process.browser) {
         store = JSON.parse(localStorage.getItem('followers')) || setup;
-    }
+    //}
 
 	const { subscribe, set, update } = writable(store);
 
@@ -90,9 +90,9 @@ function manageFollowers() {
          * reset the state
          */
         reset: () => {
-            if (process.browser) {
+           // if (process.browser) {
                 localStorage.setItem('followers', setup);
-            }
+            //}
             return set(setup);
         },
 	};
@@ -100,9 +100,9 @@ function manageFollowers() {
 
 const followers = manageFollowers();
 followers.subscribe((val) => {
-    if (process.browser) {
+    //if (process.browser) {
         localStorage.setItem('followers', JSON.stringify(val));
-    }
+    //}
 });
 
 export { followers };
