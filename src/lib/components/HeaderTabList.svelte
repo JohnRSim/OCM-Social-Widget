@@ -24,9 +24,13 @@
 	async function updateTab() {
 		await tick();
 		const activeTabDOM = tabs.getElementsByClassName('active');
+		if ((activeTabDOM) && (activeTabDOM.length > 0)) {
+			console.log(activeTabDOM)
+			tabHighlightLeft = activeTabDOM[0].offsetLeft;
+			tabHighlightWidth = activeTabDOM[0].offsetWidth-12;
+		} else {
 
-		tabHighlightLeft = activeTabDOM[0].offsetLeft;
-		tabHighlightWidth = activeTabDOM[0].offsetWidth-12;
+		}
 	}
 
 	/**
