@@ -156,17 +156,17 @@
 		min-height: 38px;
 		line-height: 38px;
 	}
+	.tablist li span {
+		min-height: 50px;
+		line-height: 50px;
+	}
+	.highlight {
+		/*background-color: #d40511;*/
+		background-color: #fff;
+	}
 
 	/* Medium devices (landscape tablets, 768px and up) */
 	@media only screen and (min-width: 768px) {
-		.tablist li span {
-			min-height: 50px;
-			line-height: 50px;
-		}
-		.highlight {
-			/*background-color: #d40511;*/
-			background-color: #fff;
-		}
 	}
 	.label {
 		pointer-events: none;
