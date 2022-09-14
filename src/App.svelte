@@ -154,9 +154,6 @@ import { validate_each_argument } from 'svelte/internal';
 						sUser.updateConnectionInfo(connection.languageLocale, connection.apiVersion, sessionID);
 						//sUser.updateOCEVal('id',connection.id);
 
-						flip = true;
-						userFollowing();
-						userFollowers();
 
 						//get Profile pic
 						const [promiseProfilePic, abortProfilePic] = OSN.getMyProfilePic($sUser.session.oce, $sUser.sessionID);
@@ -176,6 +173,10 @@ import { validate_each_argument } from 'svelte/internal';
 							sPeople.createBlankProfile(oceProfile.id);
 							//update profile info
 							sUser.updateProfileInfo(oceProfile, 'oce');
+
+							flip = true;
+							userFollowing();
+							userFollowers();
 
 							//get Profile pic
 							const [promiseProfilePic, abortProfilePic] = OSN.getProfilePictureDataUri([$sUser.profile.oce.id], $sUser.session.oce, $sUser.sessionID);
