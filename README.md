@@ -64,6 +64,9 @@ Props info coming soon..
 # Deploy OCM Sites
 In the component folder download the zipped package and upload into OCM as a new component. (Coming Soon)...
 
+![image](https://user-images.githubusercontent.com/364208/190470793-901a8cb3-8229-42e8-adc1-f95a5df0bd6a.png)
+
+
 # Notes
 - App UI & Headless integration (Complete)
 - OCM Sites Component Sample (WIP)
