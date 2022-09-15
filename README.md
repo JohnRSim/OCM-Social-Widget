@@ -12,7 +12,7 @@ https://bitmapbytes.com/free-oracle-content-management-social-widget/
 Authentication currently uses OAuth2 against IDCS you will need to setup an IDCS application first - Please use this guide
 https://docs.oracle.com/en/cloud/paas/content-cloud/solutions/integrate-oracle-content-management-using-oauth.html#GUID-49F31EE7-D7C0-4EE4-A9E8-B610A7E816B1
 
-# Cors 
+# CORS
 If you are runnng localhost you will need to disable CORS I use the following flag with chrome and create a custom user dir "ChromeFiles" without this --disable-web-security will not work.
 ```
 "C:\Program Files (x86)\Google\Chrome\Application\chrome.exe" --allow-running-insecure-content --disable-web-security --user-data-dir=C:\ChromeFiles
