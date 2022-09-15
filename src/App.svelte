@@ -11,7 +11,7 @@
 	import icoGlobe from './assets/ico_globe.svg';
 	import icoLock from './assets/ico_lock.svg';
 	import icoUser from './assets/ico_user.svg';
-	import logo from './assets/logo_social.png';
+	import logo from './assets/logo_social.svg';
 	
 	//api
 	import AzureAuth from './lib/api/auth2.js';
@@ -708,7 +708,7 @@
 	.widgetWrapper {
 		background-color: transparent;
 		width: 440px;
-		height:588px;
+		height:618px;
 		perspective: 1000px;
 	}
 	
