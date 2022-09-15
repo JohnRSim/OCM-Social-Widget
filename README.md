@@ -2,7 +2,25 @@
 
 # OCM-Social-Widget - In Progress
 
-Free Custom Component built with Svelte for searching and connecting with users in OCM - WIP....
+Free Custom Component built with Svelte for searching and connecting with users in OCM can be used headless or installed as a component and used directly in OCM Sites.
+
+#### Enables users the ability to:
+
+- Search for other users
+- Follow or unfollow users
+- View users you are actively following
+- View who is following you
+
+As you can have unlimited user license on OCM - if a user is defined as a OCM user in IDCS - they will appear within this app providing a basic sample of social capabilities that OCM can provide OOTB with no custom middleware.
+
+#### Filesize
+gzip: 26.88 KiB 
+
+#### Here is a quick demo running as a headless webcomponent - 
+
+https://user-images.githubusercontent.com/364208/190472605-6c1670a8-a85f-4ccd-8168-8727abaf8482.mp4
+
+
 
 # Check the blog for the latest updates
 
@@ -63,6 +81,9 @@ Props info coming soon..
 
 # Deploy OCM Sites
 In the component folder download the zipped package and upload into OCM as a new component. (Coming Soon)...
+
+![image](https://user-images.githubusercontent.com/364208/190470793-901a8cb3-8229-42e8-adc1-f95a5df0bd6a.png)
+
 
 # Notes
 - App UI & Headless integration (Complete)
