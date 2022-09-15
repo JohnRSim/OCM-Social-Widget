@@ -14,7 +14,7 @@
 	import logo from './assets/logo_social.svg';
 	
 	//api
-	import AzureAuth from './lib/api/auth2.js';
+	import Auth from './lib/api/auth.js';
 	import OCESocial from './lib/api/oce_social.js';
 	import OCERemoteJSON from './lib/api/oce_remoteJSON.js';
 	
@@ -30,7 +30,7 @@
 
 	const social = new OCESocial();
 	const OSN = new OCERemoteJSON();
-	const Auth = new AzureAuth();
+	const IDCS = new Auth();
 
 	//globals
 	let searchFieldActive = false;
@@ -95,7 +95,7 @@
 	 **/
 	 function login() {
 		//get OCE session token
-		const [promise, abort] = Auth.login(username, password, 'https://1ABA33B6ED08480492BB2FB081CF85B2.cec.ocp.oraclecloud.com:443/urn:opc:cec:all');
+		const [promise, abort] = IDCS.login(username, password, 'https://1ABA33B6ED08480492BB2FB081CF85B2.cec.ocp.oraclecloud.com:443/urn:opc:cec:all');
 
 		promise.then((oce) => {
 			console.log('[OCE][Auth][Logged In][Token]',oce);
@@ -218,6 +218,7 @@
 		if (updatingFollow.indexOf(userID) >= 0) {
 			return;
 		}
+
 		//show loading display
 		updatingFollow.push(userID);
 		isUpdatingFollow = updatingFollow;
@@ -482,9 +483,9 @@
 				{#if (activeTab === 'Following')}
 					<main>
 						{#if ($sUser.stats.following === 0)}
-						<div class="info">
-							You have no connections
-						</div>
+							<div class="info">
+								You have no connections
+							</div>
 						{:else}
 						<ul>
 							<!-- User List -->
@@ -516,9 +517,9 @@
 				{:else if (activeTab === 'Followers')}
 					<main>
 						{#if ($sUser.stats.followers === 0)}
-						<div class="info">
-							You have no followers
-						</div>
+							<div class="info">
+								You have no followers
+							</div>
 						{:else}
 							users following
 						{/if}
@@ -540,7 +541,7 @@
 	<!-- Flipper -->
 
 	<footer class:hidden="{!flip}" class:show="{flip}">
-		<button class="logout" on:click="{() => { flip = false;}}">Logout</button>
+		<button class="logout" on:click="{() => { flip = false; }}">Logout</button>
 	</footer>
 </section>
 <!-- xWrapper -->
@@ -601,12 +602,19 @@
 		position: absolute;
 		width: 100%;
 		height: 100%;
+    	min-height: 100%;
 		-webkit-backface-visibility: hidden;
 		backface-visibility: hidden;
 	}
 	.socialWidget {
+		display: flex;
+		flex-direction: column;
   		transform: rotateY(180deg);
 	}
+	.socialWidget main {
+		flex:1;
+	}
+
 	article {
 		border-radius:26px 26px 20px 20px;
 		box-shadow:0px 2px 4px  0px rgba(0,0,0,0.15);
@@ -620,6 +628,7 @@
 		position: relative;
 		width: 100%;
 		height: 100%;
+    	min-height: 100%;
 		text-align: center;
 		transition: transform 0.6s;
 		transform-style: preserve-3d;
@@ -795,7 +804,7 @@
 	}
 
 	main {
-		max-height:400px;
+		/*max-height:400px;*/
 		overflow-y: auto;
 		margin-right:10px;
 		margin-top:10px;
