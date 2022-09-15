@@ -90,207 +90,93 @@
 		});*/
 	});
 
-
 	/**
 	 * login
 	 **/
 	 function login() {
-		//errorCls = '';
-		//if (authenticating) {
-		//	return;
-		//}
-		//authenticating = true;
+		//get OCE session token
+		const [promise, abort] = Auth.login(username, password, 'https://1ABA33B6ED08480492BB2FB081CF85B2.cec.ocp.oraclecloud.com:443/urn:opc:cec:all');
 
-		//FIGHTING WITH ORACLE SUPPORT [SR 3-22544107901 ]
-		//SHOULD ONLY NEED 1 bearer token and not 2...
-		//get IDCS session token first
-		//const [promiseIDCS, abortIDCS] = Auth.login(username, password, 'urn:opc:idm:__myscopes__');
-		//
-		//promiseIDCS.then((idcs) => {
-		//	console.log('[IDCS][Auth][Logged In][Token]',idcs);
-		//
-		//	//make sure access token is returned else error
-		//	if (typeof(idcs.access_token) === 'undefined') {
-		//		loginError();
-		//		return;
-		//	}
-		//	//const seconds = new Date().getTime() / 1000;
-        //    //const token = {'idcs-auth-token': `${idcs.access_token}|${seconds + 3500}`};
-		//	
-			//update session store
-		//	sUser.updateSession(idcs.access_token,'idcs');
+		promise.then((oce) => {
+			console.log('[OCE][Auth][Logged In][Token]',oce);
 
-		
-			//get OCE session token
-			const [promise, abort] = Auth.login(username, password, 'https://1ABA33B6ED08480492BB2FB081CF85B2.cec.ocp.oraclecloud.com:443/urn:opc:cec:all');
-
-			promise.then((oce) => {
-				console.log('[OCE][Auth][Logged In][Token]',oce);
-
-				if (typeof(oce.error) !== 'undefined') {
-					console.error('IDCS OCE Auth Error: ', oce.error);
-					//loginError();
-				}
-
-				//update session store
-				sUser.updateSession(oce.access_token,'oce');
-
-				//get user profile info store in store
-				//const [promise, abort] = Auth.loadUserProfile('Me', $sUser.session.idcs);
-
-				//promise.then((idcsProfile) => {
-				//	console.log('[IDCS][Profile]',idcsProfile);
-				//	sUser.updateProfileInfo(idcsProfile, 'idcs');
-
-					//set sessionID if null set to active login to reuse throughout journey
-					let sessionID = ($sUser.sessionID)? $sUser.sessionID: Date.now();
-					//get conversation connection info
-					const [promise, abort] = social.getConnectionInfo($sUser.session.oce, $sUser.useSessionRequests, sessionID);
-
-					promise.then((connection) => {
-						console.log('[connection]',connection);
-						
-							
-						//set sessionID
-						sessionID = ($sUser.useSessionRequests) ? sessionID : connection.apiRandomID;
-						sUser.updateConnectionInfo(connection.languageLocale, connection.apiVersion, sessionID);
-						//sUser.updateOCEVal('id',connection.id);
-
-
-						//get Profile pic
-						const [promiseProfilePic, abortProfilePic] = OSN.getMyProfilePic($sUser.session.oce, $sUser.sessionID);
-
-						promiseProfilePic.then((profilePics) => {
-							console.log('[getMyProfilePic]',profilePics);
-							sPeople.updateProfileImg($sUser.profile.oce.id, profilePics[0].returnValue);
-						});
-
-						//get OCE profile info
-						const [promise, abort] = social.getProfile(connection.user.id, $sUser.session.oce);
-
-						promise.then((oceProfile) => {
-							console.log('[OCE][Profile]',oceProfile);
-
-							//create empty slot if user does not exist
-							sPeople.createBlankProfile(oceProfile.id);
-							//update profile info
-							sUser.updateProfileInfo(oceProfile, 'oce');
-
-							flip = true;
-							userFollowing();
-							userFollowers();
-
-							//get Profile pic
-							const [promiseProfilePic, abortProfilePic] = OSN.getProfilePictureDataUri([$sUser.profile.oce.id], $sUser.session.oce, $sUser.sessionID);
-
-							promiseProfilePic.then((profilePics) => {
-								console.log('[getProfilePictureDataUri]',profilePics);
-								if (profilePics[0].returnStatus === 'exception') {
-									return;
-								}
-								sPeople.updateProfileImg($sUser.profile.oce.id, profilePics[0].returnValue);
-							});
-
-							//create connection for video support.
-							//const peer = new Peer(oceProfile.id); 
-							
-
-							/*
-							//fetch profile image store as blob:url
-							const [promise, abort] = profile.fetchProfileImg(oceProfile.profilePictureURL, $sUser.session.oce);
-							//const [promise, abort] = profile.fetchProfileImg(`https://oce-fishbowl.cec.ocp.oraclecloud.com/pxysvc/proxy/oce/osn/social/api/v1/pictures/${res.id}/profile`);
-
-							promise.then((profileUrl) => {
-								console.log('[ProfilePic]',profileUrl);
-								sPeople.updateProfileImg(oceProfile.id, profileUrl);
-							});
-							*/
-
-							//items that can be precached with session info
-							//preCacheAllWithSession();
-
-							//goto dashboard
-							//goto('dashboard/feed/Home');
-						});
-						
-						//get User Stats 
-						const [promiseStats, abortStats] = social.getUserStats(connection.user.id, $sUser.session.oce);
-
-						promiseStats.then((res) => {
-							console.log('[getUserStats]',res);
-							const stats = {
-								followers: 0,
-								following: 0,
-								newConversations: 0,
-							};
-							res.items.forEach((v, i) => {
-								if (v.name === 'FOLLOWERS_COUNT') {
-									stats.followers = v.count;
-								}
-								if (v.name === 'FOLLOWING_COUNT') {
-									stats.following = v.count;
-								}
-								if (v.name === 'NEW_CONVERSATIONS_COUNT') {
-									stats.newConversations = v.count;
-								}
-								
-							});
-							//update stats
-							sUser.updateStats(stats);
-						});
-
-						//get all custom user properties
-						const [promiseProps, abortProps] = social.getAllUserProperties(connection.user.id, $sUser.session.oce);
-
-						promiseProps.then((allUserProps) => {
-							console.log('[OCE][Profile][getAllUserProperties]',allUserProps);
-							
-							//check if user has custom props
-							/*
-							if (allUserProps.items.some(prop => prop.name === 'A_User_TargetAudience')) {
-								//update props
-								sUser.updateProps(allUserProps);
-							//create custom props
-							} else {
-								const userProps = [{
-									name: 'A_App_Theme',
-									value: 'light'
-								},{
-									name: 'A_App_FontSize',
-									value: '1'
-								},{
-									name: 'A_App_Zoom',
-									value: '2'
-								},{
-									name: 'A_App_Language',
-									value: 'en'
-								},{
-									name: 'A_User_ContentLanguage',
-									value: 'en'
-								},{
-									name: 'A_User_TargetAudience',
-									value: 'TA_global'
-								}];
-
-								userProps.forEach((prop, i) => {
-									sUser.updateProps(prop);
-									createUserProperty(prop,connection.user.id);
-								});
-							}
-								*/
-						});
-					});
-				//});
-			}).catch((err) => {
-				console.error('IDCS OCE Auth Error: ', err);
+			//check if IDCS errored - 
+			if (typeof(oce.error) !== 'undefined') {
+				console.error('IDCS OCE Auth Error: ', oce.error);
 				//loginError();
+				return;
+			}
+
+			//update session store
+			sUser.updateSession(oce.access_token,'oce');
+
+			//set sessionID if null set to active login to reuse throughout journey
+			let sessionID = ($sUser.sessionID)? $sUser.sessionID: Date.now();
+
+			//get conversation connection info
+			const [promise, abort] = social.getConnectionInfo($sUser.session.oce, $sUser.useSessionRequests, sessionID);
+
+			promise.then((connection) => {
+				console.log('[connection]',connection);
+				
+				//set sessionID
+				sessionID = ($sUser.useSessionRequests) ? sessionID : connection.apiRandomID;
+				sUser.updateConnectionInfo(connection.languageLocale, connection.apiVersion, sessionID);
+				//sUser.updateOCEVal('id',connection.id);
+
+				//store user profile info
+				sUser.updateProfileInfo(connection.user, 'oce');
+
+				//flip to show social widget
+				flip = true;
+
+				//get all users following/followers
+				userFollowing();
+				userFollowers();
+				
+				//get User Stats 
+				refreshUserStats();
+
+			});
+		}).catch((err) => {
+			console.error('IDCS OCE Auth Error: ', err);
+		});
+	}
+
+	/**
+	 * refreshUserStats
+	 * grab user stats
+	 */
+	function refreshUserStats() {
+		console.log('[refreshUserStats]');
+
+		const [promiseStats, abortStats] = social.getUserStats($sUser.profile.oce.id, $sUser.session.oce);
+
+		promiseStats.then((res) => {
+			//tpl
+			const stats = {
+				followers: 0,
+				following: 0,
+				newConversations: 0,
+			};
+
+			//prep stats for store
+			res.items.forEach((v, i) => {
+				if (v.name === 'FOLLOWERS_COUNT') {
+					stats.followers = v.count;
+				}
+				if (v.name === 'FOLLOWING_COUNT') {
+					stats.following = v.count;
+				}
+				if (v.name === 'NEW_CONVERSATIONS_COUNT') {
+					stats.newConversations = v.count;
+				}
+				
 			});
 
-
-		//}).catch((err) => {
-		//	console.error('IDCS Auth Error: ', err);
-		//	loginError();
-		//});
+			//update stats
+			sUser.updateStats(stats);
+		});
 	}
 
 	/**
@@ -302,11 +188,12 @@
 		if (updatingFollow.indexOf(userID) >= 0) {
 			return;
 		}
+
 		//show loading display
 		updatingFollow.push(userID);
 		isUpdatingFollow = updatingFollow;
 
-
+		//init add follower
 		const [promise, abort] = social.addToFollowers(userID, $sUser.session.oce, $sUser.sessionID);
 		
 		promise.then((follow) => {
@@ -317,32 +204,8 @@
 			updatingFollow.splice(updatingFollow.indexOf(userID),1);
 			isUpdatingFollow = updatingFollow;
 
-			//get User Stats 
-			const [promiseStats, abortStats] = social.getUserStats($sUser.profile.oce.id, $sUser.session.oce);
-
-			promiseStats.then((res) => {
-				console.log('[getUserStats]',res);
-				const stats = {
-					followers: 0,
-					following: 0,
-					newConversations: 0,
-				};
-				res.items.forEach((v, i) => {
-					if (v.name === 'FOLLOWERS_COUNT') {
-						stats.followers = v.count;
-					}
-					if (v.name === 'FOLLOWING_COUNT') {
-						stats.following = v.count;
-					}
-					if (v.name === 'NEW_CONVERSATIONS_COUNT') {
-						stats.newConversations = v.count;
-					}
-					
-				});
-				//update stats
-				sUser.updateStats(stats);
-
-			});
+			//refresh User Stats 
+			refreshUserStats();
 		});
 	}
 
@@ -398,8 +261,10 @@
 			});
 		});
 	}
+
 	/**
 	 * getProfileImg
+	 * add user profile image to display
 	 **/
 	function retrieveProfileImg(userName) {
 		console.log('retrieveProfileImg',userName)
@@ -416,59 +281,73 @@
 			}
 		}
 	}
+
+	/**
+	 * handleSubmit
+	 * form submit empty 
+	 */
 	function handleSubmit() {
 
 	} 
-
 	
 	/**
 	 * userFollowing
-	 * get all home docs.
+	 * get all users following
 	 */
 	 function userFollowing() {
 		console.log('[userFollowing]',$sUser.profile.oce);
 
-			const [promise, abort] = social.getFollowingUsers($sUser.profile.oce.id, $sUser.session.oce);
-		
-			promise.then((res) => {
-				console.log('userFollowing',res);
-				sFollowing.addFollowing(res.items);
-			});
+		const [promise, abort] = social.getFollowingUsers($sUser.profile.oce.id, $sUser.session.oce);
+	
+		promise.then((res) => {
+			console.log('userFollowing',res);
+			sFollowing.addFollowing(res.items);
+		});
 	}
+
 	/**
 	 * userFollowers
-	 * get all home docs.
+	 * get all user followers
 	 */
 	function userFollowers() {
 		console.log('[userFollowers]');
 
-			const [promise, abort] = social.getFollowers($sUser.profile.oce.id, $sUser.session.oce);
-		
-			promise.then((res) => {
-				console.log('userFollowers',res);
-				sFollowers.addFollowers(res.items);
-			});
+		const [promise, abort] = social.getFollowers($sUser.profile.oce.id, $sUser.session.oce);
+	
+		promise.then((res) => {
+			console.log('userFollowers',res);
+			sFollowers.addFollowers(res.items);
+		});
 	}
+
+	/**
+	 * setProperties
+	 * Used for CustomElement
+	 * @param node
+	 * @param properties
+	 */
 	function setProperties(node, properties) {
-  const applyProperties = () => {
-    Object.entries(properties).forEach(([k, v]) => {
-      node[k] = v;
-    });
-  };
-  applyProperties();
-  return {
-    update(updatedProperties) {
-      properties = updatedProperties;
-      applyProperties();
-    }
-  };
-}
+		const applyProperties = () => {
+			Object.entries(properties).forEach(([k, v]) => {
+				node[k] = v;
+			});
+		};
+
+		applyProperties();
+
+		return {
+			update(updatedProperties) {
+				properties = updatedProperties;
+				applyProperties();
+			}
+		};
+	}
 </script>
 
 
 <!-- Wrapper -->
 <section>
-	
+	<!-- xFlipper -->
 	<div class="widgetWrapper" class:flip="{flip}">
 		<div class="widgetFlipper">
 			<!-- Login -->
@@ -658,6 +537,8 @@
 			<!-- xComponent -->
 		</div>
 	</div>
+	<!-- Flipper -->
+
 	<footer class:hidden="{!flip}" class:show="{flip}">
 		<button class="logout" on:click="{() => { flip = false;}}">Logout</button>
 	</footer>
