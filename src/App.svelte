@@ -529,7 +529,7 @@
 				{/if}
 				<!-- Tabs-->
 
-				<!-- Content -->
+				<!-- Following -->
 				{#if (activeTab === 'Following')}
 					<main>
 						{#if ($sUser.stats.following === 0)}
@@ -569,6 +569,7 @@
 							</ul>
 						{/if}
 					</main>
+				<!-- Followers -->
 				{:else if (activeTab === 'Followers')}
 					<main>
 						{#if ($sUser.stats.followers === 0)}
@@ -742,6 +743,7 @@
 	}
 
 	article {
+		background:#fff;
 		border-radius:26px 26px 20px 20px;
 		box-shadow:0px 2px 4px  0px rgba(0,0,0,0.15);
 		min-width:400px;
@@ -848,7 +850,8 @@
 		height:48px;
 		font-weight:500;
 		flex:1;
-		font-size:1.05em
+		font-size:1.05em;
+        outline: none;
 	}
 	input:-webkit-autofill { 
 		-webkit-background-clip: text;
@@ -933,6 +936,7 @@
 		color:#fff;
 	}
 	dd .email {
+		display: none;
 		font-size: 0.875em;
 	}
 	figure {
@@ -963,7 +967,11 @@
 		padding:0px;
 		margin:0px;
 	 }
-	 
+	.bitmapbytes-socialWidget {
+		width: 440px;
+		position: relative;
+		margin: 20px auto;
+	}
 	.bitmapbytes-socialWidget ::-webkit-scrollbar {
 		display:block;
 		width:8px;
