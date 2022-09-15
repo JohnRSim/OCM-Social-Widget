@@ -12,3 +12,11 @@ And add the following 2 files from the ./dist folder into the build folder.
 Also rename .cjs to .js
 
 Without these the component will not work.
+
+# Generate dist folder
+
+Run the build script to generate the dist folder with the component scripts.
+
+```
+npm run build
+```
