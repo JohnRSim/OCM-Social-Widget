@@ -25,7 +25,7 @@ And add the front and backchannel with your domain.
 Coming soon where to add your IDCS and app details to enable authentication.
 
 # Deploy Headless
-In the dist folder add to the head or import and then reference the custom element
+In the dist folder add script to the <head> or import and then reference the custom element
 Props info coming soon..
 
 ```
