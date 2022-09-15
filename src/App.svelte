@@ -1,3 +1,5 @@
+<svelte:options tag="ocm-social-widget" />
+
 <script>
 	//svelte
 	import { onMount } from 'svelte';
@@ -17,14 +19,14 @@
 	import OCERemoteJSON from './lib/api/oce_remoteJSON.js';
 	
 	//components
-	import HeaderTabList from './lib/components/HeaderTabList.svelte';
+	import  './lib/components/HeaderTabList.svelte';
 
 	//stores
 	import { user as sUser } from './stores/user.js';
 	import { following as sFollowing } from './stores/following.js';
 	import { followers as sFollowers } from './stores/followers.js';
 	import { people as sPeople } from './stores/people.js';
-import { validate_each_argument } from 'svelte/internal';
+	import { validate_each_argument } from 'svelte/internal';
 
 	const social = new OCESocial();
 	const OSN = new OCERemoteJSON();
@@ -447,10 +449,26 @@ import { validate_each_argument } from 'svelte/internal';
 				sFollowers.addFollowers(res.items);
 			});
 	}
+	function setProperties(node, properties) {
+  const applyProperties = () => {
+    Object.entries(properties).forEach(([k, v]) => {
+      node[k] = v;
+    });
+  };
+  applyProperties();
+  return {
+    update(updatedProperties) {
+      properties = updatedProperties;
+      applyProperties();
+    }
+  };
+}
 </script>
+
 
 <!-- Wrapper -->
 <section>
+	
 	<div class="widgetWrapper" class:flip="{flip}">
 		<div class="widgetFlipper">
 			<!-- Login -->
@@ -538,10 +556,30 @@ import { validate_each_argument } from 'svelte/internal';
 				</header>
 				<!-- xHeader -->
 
-				<!-- Tabs -->
+				<!-- Tabs --> 
 				{#if ((activeTab !== 'Search') && (!searchField))}
 					<nav>
-						<HeaderTabList
+						<!-- switch to custom element -->
+						<header-tabs
+							on:tab="{(e) => {
+								activeTab = e.detail.name;
+							}}"
+							use:setProperties="{
+								{ 
+									hasTabs: [
+										{
+											'name': 'Following',
+											'path': '/?tab=Tokens',
+										},
+										{
+											'name': 'Followers',
+											'path': '/?tab=NFTs',
+										},
+									],
+									activeTab: activeTab
+								}
+							}" />
+						<!--<HeaderTabList
 							on:tab="{(e) => {
 								activeTab = e.detail.name;
 								//goto(e.detail.path, { replaceState: true, noscroll: true });
@@ -556,7 +594,7 @@ import { validate_each_argument } from 'svelte/internal';
 									path: `/?tab=NFTs`,
 								},
 							]}"
-							activeTab="{activeTab}" />
+							activeTab="{activeTab}" />-->
 					</nav>
 				{/if}
 				<!-- Tabs-->
