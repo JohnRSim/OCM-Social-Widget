@@ -11,6 +11,7 @@
 	import icoGlobe from './assets/ico_globe.svg';
 	import icoLock from './assets/ico_lock.svg';
 	import icoUser from './assets/ico_user.svg';
+	import icoCross from './assets/ico_cross.svg';
 	import logo from './assets/logo_social.svg';
 	
 	//api
@@ -33,6 +34,7 @@
 	const IDCS = new Auth();
 
 	//globals
+	let isMounted = false;
 	let searchFieldActive = false;
 	let ocmFieldActive = false;
 	let userFieldActive = false;
@@ -46,48 +48,15 @@
 	$: isUpdatingFollow = [];
 	let userProfilePhotos = {};
 	$: userProfilePhotos = $sPeople.profilePhoto;
-
+	$: activeFollowers = ($sFollowers.activeFollowers.length > 0)?$sFollowers.activeFollowers:[];
+	$: following = ($sFollowing.activeFollowing.length > 0)?$sFollowing.activeFollowing:[];
+	$: userSearchResults = ($sPeople.searchResults.length > 0)?$sPeople.searchResults:[];
 	//auth
 	let username = '';
 	let password = '';
 
 	onMount(() => {
-		/*
-		const [promise, abort] = social.getPeople(null, $sUser.session.oce);
-
-		promise.then((res) => {
-			console.log('[People]',res);
-			//sUser.profileImg = red
-			//items = res.items;
-
-			if ((res) && (res.items)) {
-
-				const profileImages = [];
-				res.items.forEach((v, i) => {
-					sPeople.updateProfileInfo(v);
-					profileImages.push(v.id);
-				});
-				
-				if ($sPeople.searchEnabled) {
-					//items = $sPeople.availableProfiles;
-				}
-				//get Profile pic
-				const [promise, abort] = OSN.getProfilePictureDataUri(profileImages, $sUser.session.oce, $sUser.sessionID);
-
-				promise.then((profilePics) => {
-					console.log('[getProfilePictureDataUri]',profilePics);
-					profileImages.forEach((v, i) => {
-						sPeople.updateProfileImg(profileImages[i], profilePics[i].returnValue);
-					});
-
-					//loadingCommentProfileImgs = true;
-				});
-
-				//peopleLoaded = true;
-				
-				//hasContent = true;
-			}
-		});*/
+		isMounted = true;
 	});
 
 	/**
@@ -171,7 +140,6 @@
 				if (v.name === 'NEW_CONVERSATIONS_COUNT') {
 					stats.newConversations = v.count;
 				}
-				
 			});
 
 			//update stats
@@ -234,32 +202,8 @@
 			updatingFollow.splice(updatingFollow.indexOf(userID),1);
 			isUpdatingFollow = updatingFollow;
 
-			//get User Stats 
-			let activeUserID = 16001;
-			const [promiseStats, abortStats] = social.getUserStats(activeUserID, $sUser.session.oce);
-
-			promiseStats.then((res) => {
-				console.log('[getUserStats]',res);
-				const stats = {
-					followers: 0,
-					following: 0,
-					newConversations: 0,
-				};
-				res.items.forEach((v, i) => {
-					if (v.name === 'FOLLOWERS_COUNT') {
-						stats.followers = v.count;
-					}
-					if (v.name === 'FOLLOWING_COUNT') {
-						stats.following = v.count;
-					}
-					if (v.name === 'NEW_CONVERSATIONS_COUNT') {
-						stats.newConversations = v.count;
-					}
-					
-				});
-				//update stats
-				sUser.updateStats(stats);
-			});
+			//refresh User Stats 
+			refreshUserStats();
 		});
 	}
 
@@ -343,11 +287,99 @@
 			}
 		};
 	}
+
+	/**
+	 * searchUser
+	*/
+	function searchUser(action) {
+		console.log('[searchUser]');
+		if ((action === 'button') && (activeTab === 'Search')) {
+			activeTab = 'Following'; 
+			searchField = '';
+			return;
+		}
+		activeTab = 'Search'; 
+		const searchVal = ((searchField) && (searchField.length > 0))?searchField.toLowerCase():null;
+		
+		const [promise, abort] = social.getPeople(searchVal, $sUser.session.oce);
+
+		promise.then((res) => {
+			console.log('[People]',res);
+			//sUser.profileImg = red
+			//items = res.items;
+
+			if ((res) && (res.items)) {
+
+				const profileImages = [];
+				res.items.forEach((v, i) => {
+					sPeople.updateProfileInfo(v);
+					profileImages.push(v.id);
+				});
+				
+				if ($sPeople.searchEnabled) {
+					//items = $sPeople.availableProfiles;
+				}
+				
+				sPeople.updateVal('searchResults', profileImages);
+
+				//get Profile pic
+				const [promise, abort] = OSN.getProfilePictureDataUri(profileImages, $sUser.session.oce, $sUser.sessionID);
+
+				promise.then((profilePics) => {
+					console.log('[getProfilePictureDataUri]',profilePics);
+					profileImages.forEach((v, i) => {
+						sPeople.updateProfileImg(profileImages[i], profilePics[i].returnValue);
+					});
+
+					//loadingCommentProfileImgs = true;
+				});
+
+				//peopleLoaded = true;
+				
+				//hasContent = true;
+			}
+		});
+	}
+
+	
+	/**
+	 * profilePhotoExists
+	 **/
+	 function profilePhotoExists(userID) {
+		return ((typeof($sPeople.profilePhoto[userID]) !== 'undefined') && ($sPeople.profilePhoto[userID].img));
+	}
+
+	/**
+	 * getProfileImg
+	*/
+	function getProfileImg(user) {
+		//get Profile pic
+		const [promise, abort] = OSN.getProfilePictureDataUri(user, $sUser.session.oce, $sUser.sessionID);
+
+		promise.then((profilePics) => {
+			console.log('[getProfilePictureDataUri]',profilePics);
+			const profileImages = [];
+			user.forEach((v, i) => {
+				sPeople.updateProfileImg(user[i], profilePics[i].returnValue);
+			});
+
+			//loadingCommentProfileImgs = true;
+		});
+		return icoUser;
+	}
+
+	/**
+	 * enter on searchfield
+	 * ..lazy
+	*/
+	function onKeyPress(e) {
+    	if (e.charCode === 13) searchUser();
+  	};
 </script>
 
 
 <!-- Wrapper -->
-<section>
+<section class="bitmapbytes-socialWidget">
 	<!-- xFlipper -->
 	<div class="widgetWrapper" class:flip="{flip}">
 		<div class="widgetFlipper">
@@ -402,9 +434,11 @@
 					</div>
 					<!-- xOCM pasword -->
 
+					<!-- Actions -->
 					<div class="loginAction">
 						<button on:click="{login}">Login</button>
 					</div>
+					<!-- xActions -->
 				</form>
 			</article>
 			<!-- xLogin -->
@@ -427,9 +461,10 @@
 								type="search" 
 								placeholder="Search Network Users..." 
 								bind:value="{searchField}"
+								on:keypress={onKeyPress}
 								on:focus="{() => {searchFieldActive = true;}}"
 								on:blur="{() => {searchFieldActive = false;}}"/>
-							<button style="background-image:url({icoArrow})" on:click="{() => { activeTab = 'Search'; }}"></button>
+							<button style="background-image:url({(activeTab === 'Search')?icoCross:icoArrow})" on:click="{() => { searchUser('button'); }}"></button>
 						</div>
 						<!-- xSearch Field -->
 					</fieldset>
@@ -437,7 +472,7 @@
 				<!-- xHeader -->
 
 				<!-- Tabs --> 
-				{#if ((activeTab !== 'Search') && (!searchField))}
+				{#if (activeTab !== 'Search')}
 					<nav>
 						<!-- switch to custom element -->
 						<header-tabs
@@ -487,31 +522,36 @@
 								You have no connections
 							</div>
 						{:else}
-						<ul>
-							<!-- User List -->
-							<li>
-								<dl>
-									<!-- Img Profile Info -->
-									<dt>
-										<figure>
-											<img src="data:image/gif;base64,R0lGODlhAQABAIAAAAUEBAAAACwAAAAAAQABAAACAkQBADs=" alt="">
-											<figcaption>Alfie McClagon</figcaption>
-										</figure>
-									</dt>
-									<!-- xImg Profile Info -->
-									
-									<!-- Profile Data -->
-									<dd>
-										<b>User 1</b>
-										<p>
-											Lorem ipsum and content....
-										</p>
-									</dd>
-									<!-- xProfile Data -->
-								</dl>
-							</li>
-							<!-- xUser List -->
-						</ul>
+							<ul>
+								{#each following as user}
+									<li>
+										<dl>
+											<!-- Img Profile Info -->
+											<dt>
+												<figure>
+													{#if ((typeof($sPeople.profilePhoto[user]) !== 'undefined') && ($sPeople.profilePhoto[user].img))}
+														<img src="{$sPeople.profilePhoto[user].img}" alt="{($sPeople.profile[user])?$sPeople.profile[user].displayName:''}" />
+													{:else}
+														<img src="{getProfileImg([user])}" alt="{$sFollowing.following[user].displayName}" />
+													{/if}
+													<figcaption>{$sFollowing.following[user].displayName}</figcaption>
+												</figure>
+											</dt>
+											<!-- xImg Profile Info -->
+											
+											<!-- Profile Data -->
+											<dd>
+												<button on:click="{() => { unfollowUser(user) }}">Unfollow</button>
+												<b>{$sFollowing.following[user].displayName}</b>
+												<p class="email">
+													{$sFollowing.following[user].eMailAddress}
+												</p>
+											</dd>
+											<!-- xProfile Data -->
+										</dl>
+									</li>
+								{/each}
+							</ul>
 						{/if}
 					</main>
 				{:else if (activeTab === 'Followers')}
@@ -521,15 +561,80 @@
 								You have no followers
 							</div>
 						{:else}
-							users following
-						{/if}
+								<ul>
+									{#each activeFollowers as user}
+										<li>
+											<dl>
+												<!-- Img Profile Info -->
+												<dt>
+													<figure>
+														{#if (profilePhotoExists(user))}
+															<img src="{$sPeople.profilePhoto[user].img}" alt="{$sPeople.profile[user].displayName}" />
+														{:else}
+															<img src="{icoUser}" alt="{$sFollowers.followers[user].displayName}" />
+														{/if}
+														<figcaption>{$sFollowers.followers[user].displayName}</figcaption>
+													</figure>
+												</dt>
+												<!-- xImg Profile Info -->
+												
+												<!-- Profile Data -->
+												<dd>
+													<button on:click="{() => { unfollowUser(user) }}">Unfollow</button>
+													<b>{$sFollowers.followers[user].displayName}</b>
+													<p class="email">
+														{$sFollowers.followers[user].eMailAddress}
+													</p>
+												</dd>
+												<!-- xProfile Data -->
+											</dl>
+										</li>
+									{/each}
+								</ul>
+							{/if}
 					</main>
 				<!-- Search -->
 				{:else}
 					<main>
-						<div class="info">
-							Searching network
-						</div>
+						{#if ((userSearchResults) && (userSearchResults.length > 0))}
+							<ul>
+								{#each userSearchResults as user}
+									<li>
+										<dl>
+											<!-- Img Profile Info -->
+											<dt>
+												<figure>
+													{#if (profilePhotoExists(user))}
+														<img src="{$sPeople.profilePhoto[user].img}" alt="{($sPeople.profile[user])?$sPeople.profile[user].displayName:''}" />
+													{:else}
+														<img src="{icoUser}" alt="{($sPeople.profile[user])?$sPeople.profile[user].displayName:''}" />
+													{/if}
+													<figcaption>{($sPeople.profile[user])?$sPeople.profile[user].displayName:''}</figcaption>
+												</figure>
+											</dt>
+											<!-- xImg Profile Info -->
+											
+											<!-- Profile Data -->
+											<dd>
+												{#if (!$sFollowing.following[user])}
+													<button on:click="{() => { followUser(user) }}">Follow</button>
+												{/if}
+
+												<b>{($sPeople.profile[user])?$sPeople.profile[user].displayName:''}</b>
+												<p class="email">
+													{($sPeople.profile[user])?$sPeople.profile[user].eMailAddress:''}
+												</p>
+											</dd>
+											<!-- xProfile Data -->
+										</dl>
+									</li>
+								{/each}
+							</ul>
+						{:else}
+							<div class="info">
+								No users found.
+							</div>
+						{/if}
 					</main>
 				{/if}
 				<!-- xContent -->
@@ -540,9 +645,11 @@
 	</div>
 	<!-- Flipper -->
 
+	<!-- Footer Actions Panel -->
 	<footer class:hidden="{!flip}" class:show="{flip}">
 		<button class="logout" on:click="{() => { flip = false; }}">Logout</button>
 	</footer>
+	<!-- xFooter Actions Panel -->
 </section>
 <!-- xWrapper -->
 
@@ -772,7 +879,7 @@
 	}
 	dl {
 		display: flex;
-		border-radius: 30px;
+		border-radius: 15px;
 		background:#fff;
 		transition: background 0.3s;
 		padding:10px 0px
@@ -785,6 +892,29 @@
 		flex:1;
 		margin:0px;
 		padding:0px;
+    	text-align: left;
+		display: flex;
+		flex-direction: column;
+		justify-content: center;
+		position: relative;
+	}
+	dd button {
+		position: absolute;
+		top:0px;
+		right:10px;
+		border:0px;
+		border-radius: 40px;
+		font-weight:400;
+		font-size:0.75em;
+		padding:4px 8px;
+		cursor:pointer;
+		box-shadow:inset 0px 0px 1px 0px rgba(0,0,0,0.15)
+	}
+	dd button:hover {
+		color:#fff;
+	}
+	dd .email {
+		font-size: 0.875em;
 	}
 	figure {
 		margin:0px;
@@ -794,11 +924,10 @@
 		display: none;
 	}
 	dt img {
-		width: 70px;
-		height:70px;
-		border-radius: 20px;
+		width: 50px;
+		height: 50px;
+		border-radius: 14px;
 		overflow: hidden;
-		background:#000;
 		display: block;
 		border:solid 3px #ECEEF0;
 	}
@@ -806,9 +935,8 @@
 	main {
 		/*max-height:400px;*/
 		overflow-y: auto;
+		overflow-x:hidden;
 		margin-right:10px;
-		margin-top:10px;
-		margin-bottom:10px;
 	}
 
 	 p {
@@ -817,16 +945,20 @@
 		margin:0px;
 	 }
 	 
-::-webkit-scrollbar {
-	display:block;
-	width:8px;
-}
-  
-::-webkit-scrollbar-thumb {
-	background: #7C8B9A; 
-	border-radius: 100px;
-}
+	.bitmapbytes-socialWidget ::-webkit-scrollbar {
+		display:block;
+		width:8px;
+	}
+	
+	.bitmapbytes-socialWidget ::-webkit-scrollbar-thumb {
+		background: #7C8B9A; 
+		border-radius: 100px;
+	}
 
+	.bitmapbytes-socialWidget ::-webkit-scrollbar-button {
+		width:8px;
+		height:10px;
+	}
 
 
 </style>

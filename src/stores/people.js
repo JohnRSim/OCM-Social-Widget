@@ -8,7 +8,7 @@ const setup = {
 	activePage: 'explorer', // [explorer,search]
 	searchEnabled: false,
 	searchString: '',
-    searchResults: [1,2],
+    searchResults: [],
 	filter: [],
 	profileMap: [],
 	availableProfiles:[],
