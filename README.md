@@ -20,6 +20,8 @@ If you are runnng localhost you will need to disable CORS I use the following fl
 If you have this running on a domain you can update your CORS settings on OCM 
 System >> Security
 And add the front and backchannel with your domain.
+![image](https://user-images.githubusercontent.com/364208/190382422-750d662a-03c1-49de-b765-a31260e14326.png)
+
 
 # Configuration
 Coming soon where to add your IDCS and app details to enable authentication.
