@@ -24,6 +24,17 @@ And add the front and backchannel with your domain.
 # Configuration
 Coming soon where to add your IDCS and app details to enable authentication.
 
+# Deploy Headless
+In the dist folder add to the head or import and then reference the custom element
+Props info coming soon..
+
+```
+<ocm-social-widget></ocm-social-widget>
+```
+
+# Deploy OCM Sites
+In the component folder download the zipped package and upload into OCM as a new component.
+
 # Notes
 - Draft UI in place
 - Auth Complete
