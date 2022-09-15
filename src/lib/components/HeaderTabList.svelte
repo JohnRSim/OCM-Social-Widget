@@ -15,8 +15,6 @@
 	let tabHighlightWidth = 0;
 	let tabs;
 	let isMounted = false;
-	console.log('hasTabs',hasTabs)
-	console.log('activeTab',activeTab)
 
 	$: if (isMounted && activeTab) {
 		updateTab();
@@ -24,8 +22,6 @@
 
 	onMount(() => {
 		isMounted = true;
-	console.log('hasTabs',hasTabs)
-	console.log('activeTab',activeTab)
 		//console.log(activeTabDOM,tabHighlightLeft,tabHighlightWidth)
 	});
 
