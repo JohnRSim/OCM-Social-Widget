@@ -43,6 +43,7 @@
 	let searchField;
 	let activeTab = 'Following';
 	let searching = false;
+	let loginError = false;
 
 	let requestedProfileImgs = [];
 	let updatingFollow = [];
@@ -74,6 +75,7 @@
 			//check if IDCS errored - 
 			if (typeof(oce.error) !== 'undefined') {
 				console.error('IDCS OCE Auth Error: ', oce.error);
+				loginError = true;
 				//loginError();
 				return;
 			}
@@ -111,6 +113,7 @@
 			});
 		}).catch((err) => {
 			console.error('IDCS OCE Auth Error: ', err);
+			loginError = true;
 		});
 	}
 
@@ -399,7 +402,7 @@
 	<div class="widgetWrapper" class:flip="{flip}">
 		<div class="widgetFlipper">
 			<!-- Login -->
-			<article class="loginWidget">
+			<article class="loginWidget" class:error="{loginError}">
 				<header>
 					<img width="300" src="{logo}" alt="BitmapBytes - OCM Social Widget" />
 				</header>
@@ -412,7 +415,7 @@
 							id="ocmInstanceURL" 
 							type="search" 
 							placeholder="OCM Instance URL"
-							on:focus="{() => {ocmFieldActive = true;}}"
+							on:focus="{() => { loginError = false; ocmFieldActive = true;}}"
 							on:blur="{() => {ocmFieldActive = false;}}"/>
 					</div>
 					<!-- xOCM URL Field -->
@@ -430,7 +433,7 @@
 							type="search" 
 							placeholder="Username"
 							bind:value="{username}"
-							on:focus="{() => {userFieldActive = true;}}"
+							on:focus="{() => { loginError = false; userFieldActive = true;}}"
 							on:blur="{() => {userFieldActive = false;}}"/>
 					</div>
 					<!-- xOCM OCM username -->
@@ -444,7 +447,7 @@
 							type="password" 
 							placeholder="Password"
 							bind:value="{password}"
-							on:focus="{() => {passFieldActive = true;}}"
+							on:focus="{() => { loginError = false; passFieldActive = true;}}"
 							on:blur="{() => {passFieldActive = false;}}"/>
 					</div>
 					<!-- xOCM pasword -->
@@ -987,5 +990,32 @@
 		height:10px;
 	}
 
+	.loginWidget.error .field {
+		box-shadow:inset 0px 0px 2px 0px red,0px 1px 2px 0px rgba(0,0,0,0.1);
+	}
+	.loginWidget.error {
+		animation: shake 0.82s cubic-bezier(.36,.07,.19,.97) both;
+		transform: translate3d(0, 0, 0);
+		backface-visibility: hidden;
+		perspective: 1000px;
+		box-shadow:inset 0px 0px 0px 2px red
+	}
+	@keyframes shake {
+		10%, 90% {
+			transform: translate3d(-1px, 0, 0);
+		}
+		
+		20%, 80% {
+			transform: translate3d(2px, 0, 0);
+		}
+
+		30%, 50%, 70% {
+			transform: translate3d(-4px, 0, 0);
+		}
+
+		40%, 60% {
+			transform: translate3d(4px, 0, 0);
+		}
+	}
 
 </style>
