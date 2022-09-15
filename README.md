@@ -1,6 +1,6 @@
 ![social](https://user-images.githubusercontent.com/364208/189951479-f75433ad-52b8-4ade-89d5-8a50e932c3eb.png)
 
-# OCM-Social-Widget - In Progress
+# OCM-Social-Widget
 
 Free Custom Component built with Svelte for searching and connecting with users in OCM can be used headless or installed as a component and used directly in OCM Sites.
 
@@ -80,14 +80,24 @@ Props info coming soon..
 ```
 
 # Deploy OCM Sites
-In the component folder download the zipped package and upload into OCM as a new component. (Coming Soon)...
+
+- In the component folder download the zipped package.
+- in ./dist/ rename ocm-social-widget.umd.cjs to ocm-social-widget.umd.js
+- In the Zip file replace with your build .js files
+```
+BB-Social-Widget.zip\BB-Social-Widget\assets\build\ocm-social-widget.js
+BB-Social-Widget.zip\BB-Social-Widget\assets\build\ocm-social-widget.umd.js
+```
+
+- Upload to OCM Components and assign members.
+- In sites drag and drop the component into a page.
 
 ![image](https://user-images.githubusercontent.com/364208/190470793-901a8cb3-8229-42e8-adc1-f95a5df0bd6a.png)
 
 
 # Notes
 - App UI & Headless integration (Complete)
-- OCM Sites Component Sample (WIP)
+- OCM Sites Component Sample (Complete)
 
 ## SVG Social Widget Logo
 The logo relies on the Nunito font you will need to define that in your CSS or use the prop to define a custom image.
