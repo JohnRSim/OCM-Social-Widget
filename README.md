@@ -65,9 +65,8 @@ Props info coming soon..
 In the component folder download the zipped package and upload into OCM as a new component. (Coming Soon)...
 
 # Notes
-- Draft UI in place
-- Auth Complete
-- working on returning followers and following from OCM
+- App UI & Headless integration (Complete)
+- OCM Sites Component Sample (WIP)
 
 ## SVG Social Widget Logo
 The logo relies on the Nunito font you will need to define that in your CSS or use the prop to define a custom image.
