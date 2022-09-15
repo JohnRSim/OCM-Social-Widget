@@ -41,4 +41,9 @@ In the component folder download the zipped package and upload into OCM as a new
 - Auth Complete
 - working on returning followers and following from OCM
 
+## SVG Social Widget Logo
+The logo relies on the Nunito font you will need to define that in your CSS or use the prop to define a custom image.
+https://fonts.google.com/specimen/Nunito
+
+
 ![auth](https://user-images.githubusercontent.com/364208/190133726-8b038ebf-26ae-4443-a925-69f4b9183a7b.png)
