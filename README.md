@@ -27,7 +27,30 @@ And add the front and backchannel with your domain.
 
 
 # Configuration
-Coming soon where to add your IDCS and app details to enable authentication.
+Custom Configurations for the build you will need to update.
+
+### /src/lib/config/oce.json
+```
+{
+    "contentServer": "https://<OCMInstance>.cec.ocp.oraclecloud.com"
+}
+```
+
+### /src/lib/config/idcs.json
+```
+{
+    "idcsUrl": "https://<IDCSInstance>.identity.oraclecloud.com",
+    "clientId": "<IDCS_APP_CLIENTID>",
+    "clientSecret": "<IDCS_APP_SECRETKEY>",
+    "oauthScopeUrl": "<IDCS_APP_SCOPE>"
+}
+```
+
+# Build
+Once you have the configuration files updated run the build script this will build the webcomponents into the dist folder
+```
+npm run build
+```
 
 # Deploy Headless
 In the dist folder insert script into the html head tag or import and then reference the custom element.
@@ -39,7 +62,7 @@ Props info coming soon..
 ```
 
 # Deploy OCM Sites
-In the component folder download the zipped package and upload into OCM as a new component.
+In the component folder download the zipped package and upload into OCM as a new component. (Coming Soon)...
 
 # Notes
 - Draft UI in place
