@@ -4,6 +4,12 @@
 
 Free Custom Component built with Svelte for searching and connecting with users in OCM - WIP....
 
+#### Here is a quick demo running as a headless webcomponent - 
+
+https://user-images.githubusercontent.com/364208/190472605-6c1670a8-a85f-4ccd-8168-8727abaf8482.mp4
+
+
+
 # Check the blog for the latest updates
 
 https://bitmapbytes.com/free-oracle-content-management-social-widget/
