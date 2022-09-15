@@ -18,8 +18,11 @@ If you are runnng localhost you will need to disable CORS I use the following fl
 "C:\Program Files (x86)\Google\Chrome\Application\chrome.exe" --allow-running-insecure-content --disable-web-security --user-data-dir=C:\ChromeFiles
 ```
 If you have this running on a domain you can update your CORS settings on OCM 
-System >> Security
+
+_System >> Security_
+
 And add the front and backchannel with your domain.
+
 ![image](https://user-images.githubusercontent.com/364208/190382422-750d662a-03c1-49de-b765-a31260e14326.png)
 
 
