@@ -42,6 +42,7 @@
 	let flip = false;
 	let searchField;
 	let activeTab = 'Following';
+	let searching = false;
 
 	let requestedProfileImgs = [];
 	let updatingFollow = [];
@@ -51,6 +52,7 @@
 	$: activeFollowers = ($sFollowers.activeFollowers.length > 0)?$sFollowers.activeFollowers:[];
 	$: following = ($sFollowing.activeFollowing.length > 0)?$sFollowing.activeFollowing:[];
 	$: userSearchResults = ($sPeople.searchResults.length > 0)?$sPeople.searchResults:[];
+
 	//auth
 	let username = '';
 	let password = '';
@@ -298,7 +300,17 @@
 			searchField = '';
 			return;
 		}
+
+		//trigger searching display
+		searching = true;
+
+		//set search page
 		activeTab = 'Search'; 
+		
+		//clear search results
+		sPeople.updateVal('searchResults', []);
+
+		//init username starts with search
 		const searchVal = ((searchField) && (searchField.length > 0))?searchField.toLowerCase():null;
 		
 		const [promise, abort] = social.getPeople(searchVal, $sUser.session.oce);
@@ -321,6 +333,9 @@
 				}
 				
 				sPeople.updateVal('searchResults', profileImages);
+
+				//results ready - images will load after
+				searching = false;
 
 				//get Profile pic
 				const [promise, abort] = OSN.getProfilePictureDataUri(profileImages, $sUser.session.oce, $sUser.sessionID);
@@ -632,7 +647,11 @@
 							</ul>
 						{:else}
 							<div class="info">
-								No users found.
+								{#if (searching)}
+									Searching...
+								{:else}
+									No users found.
+								{/if}
 							</div>
 						{/if}
 					</main>
