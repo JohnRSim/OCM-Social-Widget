@@ -1,16 +1,22 @@
+<svelte:options tag="header-tabs" />
+
 <script>
 	//svelte
 	import { onMount, createEventDispatcher, tick } from 'svelte';
+	import { get_current_component } from 'svelte/internal';
 
 	export let hasTabs = [];
 	export let activeTab = '';
 
 	const dispatch = createEventDispatcher();
+	const component = get_current_component();
 
 	let tabHighlightLeft = 0;
 	let tabHighlightWidth = 0;
 	let tabs;
 	let isMounted = false;
+	console.log('hasTabs',hasTabs)
+	console.log('activeTab',activeTab)
 
 	$: if (isMounted && activeTab) {
 		updateTab();
@@ -18,6 +24,8 @@
 
 	onMount(() => {
 		isMounted = true;
+	console.log('hasTabs',hasTabs)
+	console.log('activeTab',activeTab)
 		//console.log(activeTabDOM,tabHighlightLeft,tabHighlightWidth)
 	});
 
@@ -25,7 +33,7 @@
 		await tick();
 		const activeTabDOM = tabs.getElementsByClassName('active');
 		if ((activeTabDOM) && (activeTabDOM.length > 0)) {
-			console.log(activeTabDOM)
+			//console.log(activeTabDOM)
 			tabHighlightLeft = activeTabDOM[0].offsetLeft;
 			tabHighlightWidth = activeTabDOM[0].offsetWidth-12;
 		} else {
@@ -41,6 +49,7 @@
 		console.log(`[Dispatch Event][${options.action}]`, options);
 
 		dispatch(options.action, options);
+		component.dispatchEvent && component.dispatchEvent(new CustomEvent(options.action, {detail: options }));
 	}
 
 	/**
