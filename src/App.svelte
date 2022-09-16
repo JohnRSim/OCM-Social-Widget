@@ -420,6 +420,7 @@
 							enterkeyhint="next"
 							id="ocmInstanceURL" 
 							type="search" 
+							readonly
 							value="{OCMConf.contentServer || ''}"
 							placeholder="OCM Instance URL"
 							on:focus="{() => { loginError = false; ocmFieldActive = true;}}"
