@@ -64,8 +64,14 @@ Custom Configurations for the build you will need to update.
 }
 ```
 
+# Test Locally 
+Once you have the above configured you can run the following command and test to confirm the widget works.
+```
+npm run dev
+```
+
 # Build
-Once you have the configuration files updated run the build script this will build the webcomponents into the dist folder
+Once tested run the build script this will build the webcomponents into the ./dist folder
 ```
 npm run build
 ```
