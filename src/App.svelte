@@ -3,6 +3,8 @@
 <script>
 	//svelte
 	import { onMount } from 'svelte';
+	//conf
+	import OCMConf from './lib/config/oce.json';
 
 	//assets
 	import icoSearch from './assets/ico_search.svg';
@@ -44,6 +46,7 @@
 	let activeTab = 'Following';
 	let searching = false;
 	let loginError = false;
+	let loggedIn = false;
 
 	let requestedProfileImgs = [];
 	let updatingFollow = [];
@@ -67,7 +70,7 @@
 	 **/
 	 function login() {
 		//get OCE session token
-		const [promise, abort] = IDCS.login(username, password, 'https://1ABA33B6ED08480492BB2FB081CF85B2.cec.ocp.oraclecloud.com:443/urn:opc:cec:all');
+		const [promise, abort] = IDCS.login(username, password);
 
 		promise.then((oce) => {
 			console.log('[OCE][Auth][Logged In][Token]',oce);
@@ -100,6 +103,7 @@
 				//store user profile info
 				sUser.updateProfileInfo(connection.user, 'oce');
 
+				loggedIn = true;
 				//flip to show social widget
 				flip = true;
 
@@ -134,18 +138,20 @@
 				newConversations: 0,
 			};
 
-			//prep stats for store
-			res.items.forEach((v, i) => {
-				if (v.name === 'FOLLOWERS_COUNT') {
-					stats.followers = v.count;
-				}
-				if (v.name === 'FOLLOWING_COUNT') {
-					stats.following = v.count;
-				}
-				if (v.name === 'NEW_CONVERSATIONS_COUNT') {
-					stats.newConversations = v.count;
-				}
-			});
+			if ((res.items) && (res.items.length > 0)) {
+				//prep stats for store
+				res.items.forEach((v, i) => {
+					if (v.name === 'FOLLOWERS_COUNT') {
+						stats.followers = v.count;
+					}
+					if (v.name === 'FOLLOWING_COUNT') {
+						stats.following = v.count;
+					}
+					if (v.name === 'NEW_CONVERSATIONS_COUNT') {
+						stats.newConversations = v.count;
+					}
+				});
+			}
 
 			//update stats
 			sUser.updateStats(stats);
@@ -414,6 +420,7 @@
 							enterkeyhint="next"
 							id="ocmInstanceURL" 
 							type="search" 
+							value="{OCMConf.contentServer || ''}"
 							placeholder="OCM Instance URL"
 							on:focus="{() => { loginError = false; ocmFieldActive = true;}}"
 							on:blur="{() => {ocmFieldActive = false;}}"/>
@@ -443,7 +450,8 @@
 						<input 
 							autocapitalize="none" 
 							enterkeyhint="next"
-							id="password" 
+							autocomplete="current-password"
+							id="current-password" 
 							type="password" 
 							placeholder="Password"
 							bind:value="{password}"
@@ -531,68 +539,30 @@
 					</nav>
 				{/if}
 				<!-- Tabs-->
-
-				<!-- Following -->
-				{#if (activeTab === 'Following')}
-					<main>
-						{#if ($sUser.stats.following === 0)}
-							<div class="info">
-								You have no connections
-							</div>
-						{:else}
-							<ul>
-								{#each following as user}
-									<li>
-										<dl>
-											<!-- Img Profile Info -->
-											<dt>
-												<figure>
-													{#if ((typeof($sPeople.profilePhoto[user]) !== 'undefined') && ($sPeople.profilePhoto[user].img))}
-														<img src="{$sPeople.profilePhoto[user].img}" alt="{($sPeople.profile[user])?$sPeople.profile[user].displayName:''}" />
-													{:else}
-														<img src="{getProfileImg([user])}" alt="{$sFollowing.following[user].displayName}" />
-													{/if}
-													<figcaption>{$sFollowing.following[user].displayName}</figcaption>
-												</figure>
-											</dt>
-											<!-- xImg Profile Info -->
-											
-											<!-- Profile Data -->
-											<dd>
-												<button on:click="{() => { unfollowUser(user) }}">Unfollow</button>
-												<b>{$sFollowing.following[user].displayName}</b>
-												<p class="email">
-													{$sFollowing.following[user].eMailAddress}
-												</p>
-											</dd>
-											<!-- xProfile Data -->
-										</dl>
-									</li>
-								{/each}
-							</ul>
-						{/if}
-					</main>
-				<!-- Followers -->
-				{:else if (activeTab === 'Followers')}
-					<main>
-						{#if ($sUser.stats.followers === 0)}
-							<div class="info">
-								You have no followers
-							</div>
-						{:else}
+				
+				<!--Content -->
+				{#if (loggedIn)}
+					<!-- Following -->
+					{#if (activeTab === 'Following')}
+						<main>
+							{#if ($sUser.stats.following === 0)}
+								<div class="info">
+									You have no connections
+								</div>
+							{:else}
 								<ul>
-									{#each activeFollowers as user}
+									{#each following as user}
 										<li>
 											<dl>
 												<!-- Img Profile Info -->
 												<dt>
 													<figure>
-														{#if (profilePhotoExists(user))}
-															<img src="{$sPeople.profilePhoto[user].img}" alt="{$sPeople.profile[user].displayName}" />
+														{#if ((typeof($sPeople.profilePhoto[user]) !== 'undefined') && ($sPeople.profilePhoto[user].img))}
+															<img src="{$sPeople.profilePhoto[user].img}" alt="{($sPeople.profile[user])?$sPeople.profile[user].displayName:''}" />
 														{:else}
-															<img src="{icoUser}" alt="{$sFollowers.followers[user].displayName}" />
+															<img src="{getProfileImg([user])}" alt="{$sFollowing.following[user].displayName}" />
 														{/if}
-														<figcaption>{$sFollowers.followers[user].displayName}</figcaption>
+														<figcaption>{$sFollowing.following[user].displayName}</figcaption>
 													</figure>
 												</dt>
 												<!-- xImg Profile Info -->
@@ -600,9 +570,9 @@
 												<!-- Profile Data -->
 												<dd>
 													<button on:click="{() => { unfollowUser(user) }}">Unfollow</button>
-													<b>{$sFollowers.followers[user].displayName}</b>
+													<b>{$sFollowing.following[user].displayName}</b>
 													<p class="email">
-														{$sFollowers.followers[user].eMailAddress}
+														{$sFollowing.following[user].eMailAddress}
 													</p>
 												</dd>
 												<!-- xProfile Data -->
@@ -611,57 +581,97 @@
 									{/each}
 								</ul>
 							{/if}
-					</main>
-				<!-- Search -->
-				{:else}
-					<main>
-						{#if ((userSearchResults) && (userSearchResults.length > 0))}
-							<ul>
-								{#each userSearchResults as user}
-									<li>
-										<dl>
-											<!-- Img Profile Info -->
-											<dt>
-												<figure>
-													{#if (profilePhotoExists(user))}
-														<img src="{$sPeople.profilePhoto[user].img}" alt="{($sPeople.profile[user])?$sPeople.profile[user].displayName:''}" />
-													{:else}
-														<img src="{icoUser}" alt="{($sPeople.profile[user])?$sPeople.profile[user].displayName:''}" />
-													{/if}
-													<figcaption>{($sPeople.profile[user])?$sPeople.profile[user].displayName:''}</figcaption>
-												</figure>
-											</dt>
-											<!-- xImg Profile Info -->
-											
-											<!-- Profile Data -->
-											<dd>
-												{#if (!$sFollowing.following[user])}
-													<button on:click="{() => { followUser(user) }}">Follow</button>
-												{/if}
-
-												<b>{($sPeople.profile[user])?$sPeople.profile[user].displayName:''}</b>
-												<p class="email">
-													{($sPeople.profile[user])?$sPeople.profile[user].eMailAddress:''}
-												</p>
-											</dd>
-											<!-- xProfile Data -->
-										</dl>
-									</li>
-								{/each}
-							</ul>
-						{:else}
-							<div class="info">
-								{#if (searching)}
-									Searching...
-								{:else}
-									No users found.
+						</main>
+					<!-- Followers -->
+					{:else if (activeTab === 'Followers')}
+						<main>
+							{#if ($sUser.stats.followers === 0)}
+								<div class="info">
+									You have no followers
+								</div>
+							{:else}
+									<ul>
+										{#each activeFollowers as user}
+											<li>
+												<dl>
+													<!-- Img Profile Info -->
+													<dt>
+														<figure>
+															{#if (profilePhotoExists(user))}
+																<img src="{$sPeople.profilePhoto[user].img}" alt="{$sPeople.profile[user].displayName}" />
+															{:else}
+																<img src="{icoUser}" alt="{$sFollowers.followers[user].displayName}" />
+															{/if}
+															<figcaption>{$sFollowers.followers[user].displayName}</figcaption>
+														</figure>
+													</dt>
+													<!-- xImg Profile Info -->
+													
+													<!-- Profile Data -->
+													<dd>
+														<button on:click="{() => { unfollowUser(user) }}">Unfollow</button>
+														<b>{$sFollowers.followers[user].displayName}</b>
+														<p class="email">
+															{$sFollowers.followers[user].eMailAddress}
+														</p>
+													</dd>
+													<!-- xProfile Data -->
+												</dl>
+											</li>
+										{/each}
+									</ul>
 								{/if}
-							</div>
-						{/if}
-					</main>
+						</main>
+					<!-- Search -->
+					{:else}
+						<main>
+							{#if ((userSearchResults) && (userSearchResults.length > 0))}
+								<ul>
+									{#each userSearchResults as user}
+										<li>
+											<dl>
+												<!-- Img Profile Info -->
+												<dt>
+													<figure>
+														{#if (profilePhotoExists(user))}
+															<img src="{$sPeople.profilePhoto[user].img}" alt="{($sPeople.profile[user])?$sPeople.profile[user].displayName:''}" />
+														{:else}
+															<img src="{icoUser}" alt="{($sPeople.profile[user])?$sPeople.profile[user].displayName:''}" />
+														{/if}
+														<figcaption>{($sPeople.profile[user])?$sPeople.profile[user].displayName:''}</figcaption>
+													</figure>
+												</dt>
+												<!-- xImg Profile Info -->
+												
+												<!-- Profile Data -->
+												<dd>
+													{#if (!$sFollowing.following[user])}
+														<button on:click="{() => { followUser(user) }}">Follow</button>
+													{/if}
+
+													<b>{($sPeople.profile[user])?$sPeople.profile[user].displayName:''}</b>
+													<p class="email">
+														{($sPeople.profile[user])?$sPeople.profile[user].eMailAddress:''}
+													</p>
+												</dd>
+												<!-- xProfile Data -->
+											</dl>
+										</li>
+									{/each}
+								</ul>
+							{:else}
+								<div class="info">
+									{#if (searching)}
+										Searching...
+									{:else}
+										No users found.
+									{/if}
+								</div>
+							{/if}
+						</main>
+					{/if}
 				{/if}
 				<!-- xContent -->
-
 			</article>
 			<!-- xComponent -->
 		</div>

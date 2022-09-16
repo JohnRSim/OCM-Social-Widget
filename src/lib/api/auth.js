@@ -20,7 +20,7 @@ class Auth {
     //
     const postData = {
       grant_type: 'password',
-      scope: scope,
+      scope: scope || idcs.oauthScopeUrl,
       username: username,
       password: password
     };
@@ -53,16 +53,3 @@ class Auth {
 }
 
 export default Auth;
-
-// export { 
-//     login, 
-//     logout,
-//     loadUserProfile, 
-//     RequestRegistrationForm,
-//     recoverPassword,
-//     anonymousToken,
-//     registerUser,
-//     validatePassword,
-//     idp,
-//     authenticateIDCS
-// };
