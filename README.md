@@ -109,5 +109,8 @@ BB-Social-Widget.zip\BB-Social-Widget\assets\build\ocm-social-widget.umd.js
 The logo relies on the Nunito font you will need to define that in your CSS or use the prop to define a custom image.
 https://fonts.google.com/specimen/Nunito
 
+## Enahancement Requests!! 
+Yup... you want - just raise an issue and mark it as an enhancement and I'll add it to the backlog :) 
+
 
 ![auth](https://user-images.githubusercontent.com/364208/190133726-8b038ebf-26ae-4443-a925-69f4b9183a7b.png)
